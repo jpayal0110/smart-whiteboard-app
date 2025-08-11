@@ -1,4 +1,4 @@
-# Smart Whiteboard - Enhanced Collaborative Drawing App
+# Smart Whiteboard 
 
 A modern whiteboard app built with React, TypeScript, Fabric.js, and FastAPI. It’s got all the good stuff like drawing tools, shapes, text editing, file uploads. Real-time collaboration is the highlight of the whiteboard so everyone can work together live!
 

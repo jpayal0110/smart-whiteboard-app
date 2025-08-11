@@ -2,49 +2,49 @@
 
 A modern, feature-rich collaborative whiteboard application built with React, TypeScript, Fabric.js, and FastAPI. This enhanced version includes advanced drawing tools, shape creation, text editing, file uploads, and real-time collaboration features similar to Canva's whiteboard tools.
 
-## ✨ Features
+## Features
 
-### 🎨 Drawing & Painting
+### Drawing & Painting
 - **Freehand Drawing**: Smooth pen tool with customizable colors and brush sizes
 - **Shape Tools**: Rectangle, circle, triangle, arrow, and line tools
 - **Interactive Shapes**: Resize, rotate, and reposition shapes with handles
 - **Color Fill**: Fill shapes with custom colors and transparency
 - **Eraser Tool**: Remove drawings and elements
 
-### 📝 Text & Notes
+### Text & Notes
 - **Text Tool**: Add text anywhere on the canvas with rich formatting
 - **Font Options**: Multiple font families, sizes, bold, italic, and colors
 - **Sticky Notes**: Draggable, resizable text boxes with background colors
 - **Real-time Editing**: Click to edit text directly on the canvas
 
-### 📁 Insert Menu
+### Insert Menu
 - **Image Upload**: Drag & drop or select images from your system
 - **File Support**: Upload PDFs, PNG, JPEG as background or elements
 - **Emoji Library**: Extensive emoji picker with 100+ emojis
 - **File Validation**: Automatic file type and size validation
 
-### 🛠️ UI & Controls
+### UI & Controls
 - **Floating Toolbar**: Comprehensive tool selection with contextual properties
 - **Color Picker**: Advanced color selection with hex values
 - **Zoom Controls**: Zoom in/out and pan across the canvas
 - **Grid System**: Optional grid overlay with snap-to-grid functionality
 - **Responsive Design**: Works on desktop and mobile devices
 
-### 🔄 Canvas Behavior
+### Canvas Behavior
 - **Multi-select**: Select multiple elements with shift+click
 - **Group Operations**: Group and ungroup elements (coming soon)
 - **Alignment Guides**: Visual guides for precise positioning
 - **Undo/Redo**: History management for all operations
 - **Real-time Sync**: Live collaboration with other users
 
-### 🏗️ Architecture
+### Architecture
 - **Modular Components**: Each tool and feature is isolated and reusable
 - **State Management**: Zustand for efficient state management
 - **TypeScript**: Full type safety throughout the application
 - **Fabric.js Integration**: Professional canvas manipulation library
 - **Socket.IO**: Real-time communication and collaboration
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js (v16 or higher)
@@ -98,7 +98,7 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 6. **Open your browser**
    Navigate to `http://localhost:3000` to access the application.
 
-## 🎯 Usage Guide
+## Usage Guide
 
 ### Creating a Room
 1. Enter your name when prompted
@@ -119,7 +119,7 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **Delete**: Press Delete key to remove selected elements
 
 ### File Uploads
-1. Click the sidebar icon (⚙️) to open the insert panel
+1. Click the sidebar icon to open the insert panel
 2. Drag and drop files or click to browse
 3. Supported formats: Images (PNG, JPG, GIF, SVG), PDFs, Text files
 4. Files are automatically validated and optimized
@@ -130,7 +130,7 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **Share Room**: Copy room link to invite others
 - **Live Cursors**: See other users' cursors (coming soon)
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 ### Frontend
 - **React 18**: Modern React with hooks and functional components
@@ -153,6 +153,72 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **Prettier**: Code formatting
 - **TypeScript**: Static type checking
 - **Hot Reload**: Fast development iteration
+
+## Application Pages & Layout
+
+### HomePage (`/`)
+The main landing page where users can create or join whiteboard rooms.
+
+**Layout Structure:**
+- **Header Section**: App title and description with animated elements
+- **Room Creation**: 
+  - Input field for room name
+  - "Create Room" button with loading state
+- **Room Joining**: 
+  - Input field for room ID
+  - "Join Room" button with loading state
+- **Features Showcase**: 
+  - Drawing tools preview
+  - Collaboration features
+  - File upload capabilities
+- **User Authentication**: Name input modal for first-time users
+
+**Key Components:**
+- `NameModal`: Popup for user name input
+- Responsive design with Tailwind CSS
+- Toast notifications for user feedback
+
+### WhiteboardPage (`/whiteboard/:roomId`)
+The main collaborative whiteboard interface where users can draw and collaborate.
+
+**Layout Structure:**
+- **Top Navigation Bar**:
+  - Room information and active user count
+  - Connection status indicator
+  - Back to home button
+- **Main Canvas Area**: 
+  - Large drawing canvas (1920x1080 default)
+  - Zoom controls and grid toggle
+  - Pan and zoom functionality
+- **Left Toolbar**: 
+  - Drawing tools (pen, shapes, text, eraser)
+  - Tool properties (color, size, opacity)
+  - Undo/redo buttons
+  - Clear canvas option
+- **Right Sidebar**: 
+  - Insert panel (images, files, emojis)
+  - Settings and preferences
+  - File upload area
+  - Emoji picker
+
+**Key Components:**
+- `WhiteboardCanvas`: Main drawing surface using Fabric.js
+- `Toolbar`: Tool selection and properties panel
+- `Sidebar`: Insert and settings panel
+- Real-time collaboration via Socket.IO
+
+### Component Architecture
+
+**Core Components:**
+- **WhiteboardCanvas**: Handles all drawing operations, element management, and canvas interactions
+- **Toolbar**: Provides tool selection and property controls for the active tool
+- **Sidebar**: Manages file uploads, emoji insertion, and additional features
+- **NameModal**: User authentication and room access control
+
+**State Management:**
+- Zustand store for canvas state, tools, and elements
+- Real-time synchronization between users
+- Local storage for user preferences
 
 ## 📁 Project Structure
 
@@ -193,7 +259,7 @@ smart-whiteboard-app/
 └── README.md
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -218,7 +284,7 @@ CORS_ORIGINS=["http://localhost:3000"]
 - **Zoom Range**: 0.1x to 5x
 - **Max File Size**: 10MB for images, 50MB for documents
 
-## 🚀 Deployment
+## Deployment
 
 ### Frontend Deployment
 ```bash
@@ -234,7 +300,7 @@ pip install -r requirements.txt
 # Deploy using your preferred method (Docker, Heroku, etc.)
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -242,35 +308,18 @@ pip install -r requirements.txt
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Fabric.js** for excellent canvas manipulation capabilities
 - **React Colorful** for the beautiful color picker
 - **Tailwind CSS** for the utility-first styling approach
 - **Socket.IO** for real-time communication features
 
-## 🔮 Roadmap
-
-### Upcoming Features
-- [ ] **Multi-select and Grouping**: Select multiple elements and group them
-- [ ] **Live Cursors**: See other users' cursors in real-time
-- [ ] **Export Options**: Export canvas as PNG, PDF, or SVG
-- [ ] **Templates**: Pre-built templates for common use cases
-- [ ] **AI Features**: Shape detection and text recognition
-- [ ] **Version History**: Track changes and revert to previous versions
-- [ ] **Comments**: Add comments and annotations
-- [ ] **Mobile App**: Native mobile applications
-
-### Performance Improvements
-- [ ] **Canvas Optimization**: Improve rendering performance for large canvases
-- [ ] **Lazy Loading**: Load elements on-demand
-- [ ] **Compression**: Compress data for faster transmission
-- [ ] **Caching**: Implement intelligent caching strategies
-
+## Roadmap
 ---
 
-**Happy Drawing! 🎨✨**
+**Happy Drawing!**

@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { useWhiteboardStore } from '../hooks/useWhiteboardStore.ts';
-import { ToolType, CanvasElement, Point, ShapeElement, TextElement, StickyNoteElement, ImageElement } from '../types';
+import { ToolType, CanvasElement, Point, ShapeElement, TextElement, StickyNoteElement, ImageElement, StrokeElement } from '../types';
 
 interface WhiteboardCanvasProps {
   onDraw: (drawingData: any) => void;
   currentTool: ToolType;
   toolProperties: any;
   canvasState: any;
+  clearCanvasTrigger?: number; // Add this to trigger canvas clearing
 }
 
 const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
@@ -15,16 +16,17 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   currentTool,
   toolProperties,
   canvasState,
+  clearCanvasTrigger,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
-  
-  const { 
-    addElement, 
-    elements, 
-    setSelectedElements, 
+
+  const {
+    addElement,
+    elements,
+    setSelectedElements,
     clearSelection,
     createShape,
     createText,
@@ -38,15 +40,33 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Set canvas element dimensions first
+    const canvasElement = canvasRef.current;
+    const canvasWidth = window.innerWidth - 32;
+    const canvasHeight = window.innerHeight - 200;
+    
+    canvasElement.width = canvasWidth;
+    canvasElement.height = canvasHeight;
+
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: window.innerWidth - 32,
-      height: window.innerHeight - 200,
+      width: canvasWidth,
+      height: canvasHeight,
       backgroundColor: '#ffffff',
       selection: true,
       preserveObjectStacking: true,
+      renderOnAddRemove: true,
+      skipTargetFind: false,
+      enableRetinaScaling: true,
+      allowTouchScrolling: true,
+
+      fireRightClick: true,
+      stopContextMenu: false,
     });
 
     fabricCanvasRef.current = canvas;
+
+    // Simple console logs for drawing state
+    console.log('Pen tool active - letting Fabric.js handle drawing');
 
     // Set up event listeners
     canvas.on('selection:created', handleSelection);
@@ -60,35 +80,39 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     canvas.on('mouse:move', handleFabricMouseMove);
     canvas.on('mouse:up', handleFabricMouseUp);
 
-    // Initialize drawing brush
+    // Initialize drawing brush with proper configuration
     canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-    canvas.freeDrawingBrush.width = 2;
-    canvas.freeDrawingBrush.color = '#000000';
-
-    // Listen for path creation (when drawing is complete)
-    canvas.on('path:created', (e: any) => {
-      console.log('Path created:', e.path);
-      const path = e.path;
-      path.id = `path_${Date.now()}_${Math.random()}`;
-      
-      // Don't add to our state - let Fabric.js manage the paths
-      // Just notify other users about the drawing
-      onDraw({ type: 'draw', element: {
-        id: path.id,
-        type: 'stroke',
-        position: { x: path.left || 0, y: path.top || 0 },
-        width: path.width || 0,
-        height: path.height || 0,
-        timestamp: Date.now(),
-      }});
+    canvas.freeDrawingBrush.width = toolProperties.strokeWidth || 2;
+    canvas.freeDrawingBrush.color = toolProperties.color || '#000000';
+    canvas.freeDrawingBrush.strokeLineCap = 'round';
+    canvas.freeDrawingBrush.strokeLineJoin = 'round';
+    // Additional brush settings for better drawing experience
+    
+    console.log('Initial brush setup:', {
+      width: canvas.freeDrawingBrush.width,
+      color: canvas.freeDrawingBrush.color,
+      strokeLineCap: canvas.freeDrawingBrush.strokeLineCap,
+      strokeLineJoin: canvas.freeDrawingBrush.strokeLineJoin
     });
+
+        // Path creation event handler will be set up in the tool change effect
 
     // Handle window resize
     const handleResize = () => {
-      canvas.setDimensions({
-        width: window.innerWidth - 32,
-        height: window.innerHeight - 200,
-      });
+      if (canvasRef.current) {
+        const canvasWidth = window.innerWidth - 32;
+        const canvasHeight = window.innerHeight - 200;
+        
+        // Update canvas element dimensions
+        canvasRef.current.width = canvasWidth;
+        canvasRef.current.height = canvasHeight;
+        
+        // Update Fabric.js canvas dimensions
+        canvas.setDimensions({
+          width: canvasWidth,
+          height: canvasHeight,
+        });
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -104,27 +128,138 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     if (!fabricCanvasRef.current) return;
 
     const canvas = fabricCanvasRef.current;
-    
+
+    console.log('=== TOOL CHANGE DEBUG ===');
     console.log('Tool changed to:', currentTool);
     console.log('Tool properties:', toolProperties);
-    
+    console.log('Canvas state before tool change:', {
+      isDrawingMode: canvas.isDrawingMode,
+      objects: canvas.getObjects().length,
+      freeDrawingBrush: !!canvas.freeDrawingBrush
+    });
+
     // Set drawing mode
+    const previousDrawingMode = canvas.isDrawingMode;
     canvas.isDrawingMode = currentTool === 'pen';
-    console.log('Drawing mode set to:', canvas.isDrawingMode);
-    
+    console.log('Drawing mode changed from', previousDrawingMode, 'to:', canvas.isDrawingMode);
+
     if (currentTool === 'pen') {
+      console.log('=== CONFIGURING PEN TOOL ===');
+      
       if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.width = toolProperties.strokeWidth;
-        canvas.freeDrawingBrush.color = toolProperties.color;
-        console.log('Brush configured:', {
+        console.log('Brush before configuration:', {
           width: canvas.freeDrawingBrush.width,
-          color: canvas.freeDrawingBrush.color
+          color: canvas.freeDrawingBrush.color,
+          strokeLineCap: canvas.freeDrawingBrush.strokeLineCap,
+          strokeLineJoin: canvas.freeDrawingBrush.strokeLineJoin
         });
+        
+        canvas.freeDrawingBrush.width = toolProperties.strokeWidth || 2;
+        canvas.freeDrawingBrush.color = toolProperties.color || '#000000';
+        canvas.freeDrawingBrush.strokeLineCap = 'round';
+        canvas.freeDrawingBrush.strokeLineJoin = 'round';
+        
+        console.log('Brush after configuration:', {
+          width: canvas.freeDrawingBrush.width,
+          color: canvas.freeDrawingBrush.color,
+          strokeLineCap: canvas.freeDrawingBrush.strokeLineCap,
+          strokeLineJoin: canvas.freeDrawingBrush.strokeLineJoin
+        });
+        console.log('Drawing mode enabled:', canvas.isDrawingMode);
       } else {
-        console.log('No freeDrawingBrush available');
+        console.log('No freeDrawingBrush available - creating new one');
+        // Create a new brush if it doesn't exist
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        canvas.freeDrawingBrush.width = toolProperties.strokeWidth || 2;
+        canvas.freeDrawingBrush.color = toolProperties.color || '#000000';
+        canvas.freeDrawingBrush.strokeLineCap = 'round';
+        canvas.freeDrawingBrush.strokeLineJoin = 'round';
+        console.log('Created new brush:', {
+          width: canvas.freeDrawingBrush.width,
+          color: canvas.freeDrawingBrush.color,
+          strokeLineCap: canvas.freeDrawingBrush.strokeLineCap,
+          strokeLineJoin: canvas.freeDrawingBrush.strokeLineJoin
+        });
       }
+      
+      // Double-check drawing mode is enabled
+      canvas.isDrawingMode = true;
+      console.log('Drawing mode confirmed:', canvas.isDrawingMode);
+      
+      // Set up path creation event handler with current toolProperties
+      canvas.on('path:created', (e: any) => {
+        console.log('Path created - drawing completed');
+        
+        const path = e.path;
+        
+        // Just add an ID and let Fabric.js handle everything else
+        path.id = `path_${Date.now()}_${Math.random()}`;
+        
+        // Fix the fill property - null fill causes rendering issues
+        if (path.fill === null) {
+          path.fill = '';
+        }
+        
+        console.log('Path created with ID:', path.id);
+        console.log('Path properties:', {
+          stroke: path.stroke,
+          strokeWidth: path.strokeWidth,
+          fill: path.fill,
+          visible: path.visible,
+          opacity: path.opacity,
+          path: (path as any).path,
+          left: path.left,
+          top: path.top,
+          width: path.width,
+          height: path.height
+        });
+        
+        // Check if path has actual drawing data
+        if ((path as any).path && (path as any).path.length > 0) {
+          console.log('Path has drawing data:', (path as any).path.length, 'segments');
+        } else {
+          console.log('Path has NO drawing data - this is the problem!');
+        }
+        
+
+        // Create path element for persistence
+        const pathElement: StrokeElement = {
+          id: path.id,
+          type: 'stroke',
+          position: { x: path.left || 0, y: path.top || 0 },
+          width: path.width || 0,
+          height: path.height || 0,
+          stroke: path.stroke || toolProperties.color,
+          strokeWidth: path.strokeWidth || toolProperties.strokeWidth,
+          timestamp: Date.now(),
+        };
+        
+        // Add to local state for persistence
+        addElement(pathElement);
+        
+        // Notify other users
+        onDraw({ 
+          type: 'draw', 
+          element: pathElement
+        });
+      });
+      
+      // Verify canvas state after pen tool setup
+      console.log('Canvas state after pen tool setup:', {
+        isDrawingMode: canvas.isDrawingMode,
+        objects: canvas.getObjects().length,
+        freeDrawingBrush: !!canvas.freeDrawingBrush,
+        brushWidth: canvas.freeDrawingBrush?.width,
+        brushColor: canvas.freeDrawingBrush?.color
+      });
     } else {
+      console.log('=== DISABLING DRAWING MODE ===');
       canvas.isDrawingMode = false;
+      console.log('Drawing mode disabled');
+      
+      // When switching away from pen tool, redraw to show all persisted elements
+      console.log('Switching away from pen tool - redrawing canvas');
+      redrawCanvas();
     }
 
     // Set cursor based on tool
@@ -180,65 +315,45 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   // Fabric.js mouse event handlers (moved to end after function declarations)
 
   // Helper functions
-  const drawShapePreview = (tool: ToolType, start: Point, end: Point) => {
-    if (!fabricCanvasRef.current) return;
-
-    const canvas = fabricCanvasRef.current;
-    const ctx = canvas.getContext();
-
-    ctx.strokeStyle = toolProperties.color;
-    ctx.lineWidth = toolProperties.strokeWidth;
-    ctx.fillStyle = toolProperties.backgroundColor;
-
+  const createPreviewShape = (tool: ToolType, start: Point, end: Point): fabric.Object | null => {
     switch (tool) {
       case 'rectangle':
-        ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
-        break;
+        return new fabric.Rect({
+          left: Math.min(start.x, end.x),
+          top: Math.min(start.y, end.y),
+          width: Math.abs(end.x - start.x),
+          height: Math.abs(end.y - start.y),
+          stroke: toolProperties.color,
+          strokeWidth: toolProperties.strokeWidth,
+          fill: 'transparent',
+          selectable: false,
+          evented: false,
+        });
       case 'circle':
         const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
-        ctx.beginPath();
-        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
-        ctx.stroke();
-        break;
+        return new fabric.Circle({
+          left: start.x - radius,
+          top: start.y - radius,
+          radius: radius,
+          stroke: toolProperties.color,
+          strokeWidth: toolProperties.strokeWidth,
+          fill: 'transparent',
+          selectable: false,
+          evented: false,
+        });
       case 'line':
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
-        break;
-      case 'arrow':
-        drawArrow(ctx, start, end);
-        break;
-      case 'triangle':
-        drawTriangle(ctx, start, end);
-        break;
+        return new fabric.Line([start.x, start.y, end.x, end.y], {
+          stroke: toolProperties.color,
+          strokeWidth: toolProperties.strokeWidth,
+          selectable: false,
+          evented: false,
+        });
+      default:
+        return null;
     }
   };
 
-  const drawArrow = (ctx: CanvasRenderingContext2D, start: Point, end: Point) => {
-    const headLength = 15;
-    const angle = Math.atan2(end.y - start.y, end.x - start.x);
 
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 6), end.y - headLength * Math.sin(angle - Math.PI / 6));
-    ctx.moveTo(end.x, end.y);
-    ctx.lineTo(end.x - headLength * Math.cos(angle + Math.PI / 6), end.y - headLength * Math.sin(angle + Math.PI / 6));
-    ctx.stroke();
-  };
-
-  const drawTriangle = (ctx: CanvasRenderingContext2D, start: Point, end: Point) => {
-    const width = end.x - start.x;
-    const height = end.y - start.y;
-
-    ctx.beginPath();
-    ctx.moveTo(start.x + width / 2, start.y);
-    ctx.lineTo(start.x, start.y + height);
-    ctx.lineTo(start.x + width, start.y + height);
-    ctx.closePath();
-    ctx.stroke();
-  };
 
   const addTextElement = (position: Point) => {
     const text = prompt('Enter text:');
@@ -259,12 +374,28 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   };
 
   const addFabricObject = (element: CanvasElement) => {
-    if (!fabricCanvasRef.current) return;
-
-    const canvas = fabricCanvasRef.current;
+    // VERIFY: Always use the current canvas reference
+    const currentCanvas = fabricCanvasRef.current;
+    if (!currentCanvas) {
+      console.error('Canvas reference is null in addFabricObject!');
+      return;
+    }
+    
+    console.log('Adding fabric object to canvas:', {
+      elementType: element.type,
+      elementId: element.id,
+      canvasObjects: currentCanvas.getObjects().length
+    });
+    
     let fabricObject: fabric.Object;
 
     switch (element.type) {
+      case 'stroke':
+        // For stroke elements, we need to preserve the actual path data
+        // Since we don't store the full path data in our state, we'll skip recreating strokes
+        // The paths should remain on the canvas from the original drawing
+        console.log('Skipping stroke recreation - paths should remain on canvas');
+        return;
       case 'shape':
         fabricObject = createFabricShape(element as ShapeElement);
         break;
@@ -283,8 +414,15 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     }
 
     (fabricObject as any).id = element.id;
-    canvas.add(fabricObject);
-    canvas.renderAll();
+    currentCanvas.add(fabricObject);
+    currentCanvas.renderAll();
+    
+    // VERIFY: Check if object was actually added
+    const objectsAfter = currentCanvas.getObjects().length;
+    console.log('Objects on canvas after adding:', objectsAfter);
+    
+    const addedObject = currentCanvas.getObjects().find(obj => (obj as any).id === element.id);
+    console.log('Object successfully added:', addedObject ? 'YES' : 'NO');
   };
 
   const createFabricShape = (element: ShapeElement): fabric.Object => {
@@ -385,38 +523,77 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     return group;
   };
 
-  const createFabricImage = (element: ImageElement): fabric.Image => {
-    return new fabric.Image(element.src, {
+  const createFabricImage = (element: ImageElement): fabric.Object => {
+    // For now, return a placeholder rectangle until we fix the image loading
+    const placeholder = new fabric.Rect({
       left: element.position.x,
       top: element.position.y,
       width: element.width,
       height: element.height,
+      fill: '#cccccc',
+      stroke: '#999999',
+      strokeWidth: 1,
       selectable: true,
       evented: true,
     });
+    return placeholder;
   };
 
   const redrawCanvas = () => {
-    if (!fabricCanvasRef.current) return;
-
-    const canvas = fabricCanvasRef.current;
-    
-    // Only clear and redraw if we're not in drawing mode
-    // This preserves drawn paths
-    if (currentTool !== 'pen') {
-      canvas.clear();
-      
-      // Redraw all elements
-      elements.forEach(element => {
-        addFabricObject(element);
-      });
+    // VERIFY: Always use the current canvas reference
+    const currentCanvas = fabricCanvasRef.current;
+    if (!currentCanvas) {
+      console.error('Canvas reference is null in redrawCanvas!');
+      return;
     }
+    
+    console.log('Redrawing canvas with elements:', elements.length);
+    console.log('Canvas objects before redraw:', currentCanvas.getObjects().length);
+    
+    // Don't clear the canvas if we're in drawing mode to preserve drawn paths
+    if (currentTool === 'pen') {
+      console.log('Skipping canvas clear in drawing mode to preserve paths');
+      return;
+    }
+    
+    currentCanvas.clear();
+    console.log('Canvas cleared, objects after clear:', currentCanvas.getObjects().length);
+    
+    // Redraw all elements except strokes (which should remain on canvas)
+    elements.forEach(element => {
+      if (element.type !== 'stroke') {
+        addFabricObject(element);
+      }
+    });
+    
+    console.log('Canvas objects after redraw:', currentCanvas.getObjects().length);
   };
 
   // Redraw canvas when elements change
   useEffect(() => {
+    // Only redraw if we're not in drawing mode to avoid clearing drawn paths
+    if (currentTool === 'pen') {
+      console.log('Skipping redraw in pen mode to preserve drawn paths');
+      return;
+    }
+    
+    // Only redraw if there are actually elements to redraw
+    if (elements.length === 0) {
+      return;
+    }
+    
+    // Redraw canvas to show all elements except strokes (which remain on canvas)
     redrawCanvas();
-  }, [elements]);
+  }, [elements, currentTool]);
+
+  // Clear Fabric.js canvas when clearCanvasTrigger changes
+  useEffect(() => {
+    if (clearCanvasTrigger && fabricCanvasRef.current) {
+      console.log('Clearing Fabric.js canvas due to clearCanvasTrigger');
+      fabricCanvasRef.current.clear();
+      fabricCanvasRef.current.requestRenderAll();
+    }
+  }, [clearCanvasTrigger]);
 
   // Fabric.js mouse event handlers
   const handleFabricMouseDown = useCallback((e: any) => {
@@ -425,6 +602,12 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     const point = { x: pointer.x, y: pointer.y };
+
+    // Don't interfere with drawing mode
+    if (currentTool === 'pen') {
+      console.log('Pen tool active - letting Fabric.js handle drawing');
+      return;
+    }
 
     if (currentTool === 'select') {
       // Let Fabric.js handle selection
@@ -449,25 +632,51 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   }, [currentTool, addTextElement, addStickyNoteElement]);
 
   const handleFabricMouseMove = useCallback((e: any) => {
+    // Don't interfere with drawing mode
+    if (currentTool === 'pen') {
+      return;
+    }
+
     if (!isDrawing || !startPoint || !fabricCanvasRef.current) return;
 
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     const currentPoint = { x: pointer.x, y: pointer.y };
 
-    // Clear previous preview
-    canvas.clear();
+    // Remove previous preview object if it exists
+    const objects = canvas.getObjects();
+    const previewObject = objects.find(obj => (obj as any).isPreview);
+    if (previewObject) {
+      canvas.remove(previewObject);
+    }
 
-    // Draw preview shape
-    drawShapePreview(currentTool, startPoint, currentPoint);
+    // Create preview shape as Fabric object
+    const previewShape = createPreviewShape(currentTool, startPoint, currentPoint);
+    if (previewShape) {
+      (previewShape as any).isPreview = true;
+      canvas.add(previewShape);
+      canvas.renderAll();
+    }
   }, [isDrawing, startPoint, currentTool]);
 
   const handleFabricMouseUp = useCallback((e: any) => {
+    // Don't interfere with drawing mode
+    if (currentTool === 'pen') {
+      return;
+    }
+
     if (!isDrawing || !startPoint || !fabricCanvasRef.current) return;
 
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     const endPoint = { x: pointer.x, y: pointer.y };
+
+    // Remove preview object
+    const objects = canvas.getObjects();
+    const previewObject = objects.find(obj => (obj as any).isPreview);
+    if (previewObject) {
+      canvas.remove(previewObject);
+    }
 
     // For line tool, create a Fabric.js Line object directly
     if (currentTool === 'line') {
@@ -477,11 +686,11 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         selectable: true,
         evented: true,
       });
-      
+
       (line as any).id = `line_${Date.now()}_${Math.random()}`;
       canvas.add(line);
       canvas.renderAll();
-      
+
       // Add to our state
       const lineElement: ShapeElement = {
         id: (line as any).id,
@@ -494,7 +703,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         strokeWidth: toolProperties.strokeWidth,
         timestamp: Date.now(),
       };
-      
+
       addElement(lineElement);
       onDraw({ type: 'shape', element: lineElement });
     } else {
@@ -527,30 +736,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         ref={canvasRef}
         className={`canvas border border-gray-300 rounded-lg shadow-lg ${!canvasState.grid ? 'no-grid' : ''}`}
       />
-      {/* Zoom controls */}
-      <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
-        <button
-          onClick={() => useWhiteboardStore.getState().zoomIn()}
-          className="bg-white p-2 rounded-lg shadow-lg hover:bg-gray-50"
-          title="Zoom In"
-        >
-          +
-        </button>
-        <button
-          onClick={() => useWhiteboardStore.getState().zoomOut()}
-          className="bg-white p-2 rounded-lg shadow-lg hover:bg-gray-50"
-          title="Zoom Out"
-        >
-          -
-        </button>
-        <button
-          onClick={() => useWhiteboardStore.getState().resetZoom()}
-          className="bg-white p-2 rounded-lg shadow-lg hover:bg-gray-50"
-          title="Reset Zoom"
-        >
-          ⌂
-        </button>
-      </div>
+
     </div>
   );
 };

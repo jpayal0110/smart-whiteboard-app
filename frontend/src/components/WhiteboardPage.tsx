@@ -33,6 +33,9 @@ const WhiteboardPage: React.FC = () => {
     createText,
   } = useWhiteboardStore();
 
+  // State to trigger canvas clearing
+  const [clearCanvasTrigger, setClearCanvasTrigger] = useState(0);
+
   useEffect(() => {
     setUserName(localStorage.getItem('userName') || '');
   }, []);
@@ -44,6 +47,10 @@ const WhiteboardPage: React.FC = () => {
       return;
     }
 
+    // Clear canvas state when room changes to prevent persistence from previous sessions
+    clearCanvas();
+    setClearCanvasTrigger(prev => prev + 1);
+
     // Initialize Socket.IO connection
     socketRef.current = io('http://localhost:8000', {
       transports: ['websocket'],
@@ -54,6 +61,10 @@ const WhiteboardPage: React.FC = () => {
     socket.on('connect', () => {
       setIsConnected(true);
       toast.success('Connected to room!');
+
+          // Clear canvas state when joining a new room to prevent persistence from previous sessions
+    clearCanvas();
+    setClearCanvasTrigger(prev => prev + 1);
 
       // Join the room
       socket.emit('join_room', { room: roomId });
@@ -125,6 +136,7 @@ const WhiteboardPage: React.FC = () => {
       socketRef.current.emit('clear_canvas', { room: roomId });
     }
     clearCanvas();
+    setClearCanvasTrigger(prev => prev + 1);
   };
 
   const handleUndo = () => {
@@ -258,12 +270,13 @@ const WhiteboardPage: React.FC = () => {
 
           {/* Canvas */}
           <div className="flex-1 p-4">
-            <WhiteboardCanvas
-              onDraw={handleDraw}
-              currentTool={currentTool}
-              toolProperties={toolProperties}
-              canvasState={canvasState}
-            />
+                    <WhiteboardCanvas
+          onDraw={handleDraw}
+          currentTool={currentTool}
+          toolProperties={toolProperties}
+          canvasState={canvasState}
+          clearCanvasTrigger={clearCanvasTrigger}
+        />
           </div>
         </div>
       </div>

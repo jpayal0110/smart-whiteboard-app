@@ -129,8 +129,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div className="toolbar bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 shadow-lg overflow-visible">
-      {/* Debug: Show current tool */}
-      <div className="text-xs mb-2">Current Tool: {currentTool}</div>
       <div className="flex items-center justify-between">
         {/* Left side - Tools */}
         <div className="flex items-center space-x-2">

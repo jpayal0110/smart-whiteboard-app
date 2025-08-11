@@ -32,6 +32,12 @@ export interface CanvasElement {
   createdBy?: string;
 }
 
+export interface StrokeElement extends CanvasElement {
+  type: 'stroke';
+  stroke: string;
+  strokeWidth: number;
+}
+
 export interface ShapeElement extends CanvasElement {
   type: 'shape';
   shapeType: ShapeType;

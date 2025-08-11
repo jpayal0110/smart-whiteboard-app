@@ -1,6 +1,11 @@
 # Smart Whiteboard - Enhanced Collaborative Drawing App
 
-A modern, feature-rich collaborative whiteboard application built with React, TypeScript, Fabric.js, and FastAPI. This enhanced version includes advanced drawing tools, shape creation, text editing, file uploads, and real-time collaboration features similar to Canva's whiteboard tools.
+A modern whiteboard app built with React, TypeScript, Fabric.js, and FastAPI. It’s got all the good stuff like drawing tools, shapes, text editing, file uploads. Real-time collaboration is the highlight of the whiteboard so everyone can work together live!
+
+![Alt text](Screenshots/LandingPage.jpeg)
+![Alt text](Screenshots/createRoom.jpeg)
+![Alt text](Screenshots/userNameDialog.jpeg)
+
 
 ## Features
 
@@ -11,17 +16,22 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **Color Fill**: Fill shapes with custom colors and transparency
 - **Eraser Tool**: Remove drawings and elements
 
+![Alt text](Screenshots/wb1.png)
+
+
 ### Text & Notes
 - **Text Tool**: Add text anywhere on the canvas with rich formatting
 - **Font Options**: Multiple font families, sizes, bold, italic, and colors
-- **Sticky Notes**: Draggable, resizable text boxes with background colors
 - **Real-time Editing**: Click to edit text directly on the canvas
+
+![Alt text](Screenshots/wb2.jpeg)
 
 ### Insert Menu
 - **Image Upload**: Drag & drop or select images from your system
 - **File Support**: Upload PDFs, PNG, JPEG as background or elements
 - **Emoji Library**: Extensive emoji picker with 100+ emojis
-- **File Validation**: Automatic file type and size validation
+
+![Alt text](Screenshots/wb3.jpeg)
 
 ### UI & Controls
 - **Floating Toolbar**: Comprehensive tool selection with contextual properties
@@ -45,58 +55,6 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **Socket.IO**: Real-time communication and collaboration
 
 ## Getting Started
-
-### Prerequisites
-- Node.js (v16 or higher)
-- Python (v3.8 or higher)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd smart-whiteboard-app
-   ```
-
-2. **Install frontend dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-3. **Install backend dependencies**
-   ```bash
-   cd ../backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   ```bash
-   # Frontend (.env)
-   REACT_APP_API_URL=http://localhost:8000
-   REACT_APP_SOCKET_URL=http://localhost:8000
-   
-   # Backend (env.example -> .env)
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
-
-5. **Start the development servers**
-   ```bash
-   # Terminal 1 - Backend
-   cd backend
-   python main.py
-   
-   # Terminal 2 - Frontend
-   cd frontend
-   npm start
-   ```
-
-6. **Open your browser**
-   Navigate to `http://localhost:3000` to access the application.
 
 ## Usage Guide
 
@@ -154,58 +112,6 @@ A modern, feature-rich collaborative whiteboard application built with React, Ty
 - **TypeScript**: Static type checking
 - **Hot Reload**: Fast development iteration
 
-## Application Pages & Layout
-
-### HomePage (`/`)
-The main landing page where users can create or join whiteboard rooms.
-
-**Layout Structure:**
-- **Header Section**: App title and description with animated elements
-- **Room Creation**: 
-  - Input field for room name
-  - "Create Room" button with loading state
-- **Room Joining**: 
-  - Input field for room ID
-  - "Join Room" button with loading state
-- **Features Showcase**: 
-  - Drawing tools preview
-  - Collaboration features
-  - File upload capabilities
-- **User Authentication**: Name input modal for first-time users
-
-**Key Components:**
-- `NameModal`: Popup for user name input
-- Responsive design with Tailwind CSS
-- Toast notifications for user feedback
-
-### WhiteboardPage (`/whiteboard/:roomId`)
-The main collaborative whiteboard interface where users can draw and collaborate.
-
-**Layout Structure:**
-- **Top Navigation Bar**:
-  - Room information and active user count
-  - Connection status indicator
-  - Back to home button
-- **Main Canvas Area**: 
-  - Large drawing canvas (1920x1080 default)
-  - Zoom controls and grid toggle
-  - Pan and zoom functionality
-- **Left Toolbar**: 
-  - Drawing tools (pen, shapes, text, eraser)
-  - Tool properties (color, size, opacity)
-  - Undo/redo buttons
-  - Clear canvas option
-- **Right Sidebar**: 
-  - Insert panel (images, files, emojis)
-  - Settings and preferences
-  - File upload area
-  - Emoji picker
-
-**Key Components:**
-- `WhiteboardCanvas`: Main drawing surface using Fabric.js
-- `Toolbar`: Tool selection and properties panel
-- `Sidebar`: Insert and settings panel
-- Real-time collaboration via Socket.IO
 
 ### Component Architecture
 
@@ -308,18 +214,58 @@ pip install -r requirements.txt
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Prerequisites
+- Node.js (v16 or higher)
+- Python (v3.8 or higher)
+- npm or yarn
 
-## Acknowledgments
+### Installation
 
-- **Fabric.js** for excellent canvas manipulation capabilities
-- **React Colorful** for the beautiful color picker
-- **Tailwind CSS** for the utility-first styling approach
-- **Socket.IO** for real-time communication features
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd smart-whiteboard-app
+   ```
 
-## Roadmap
----
+2. **Install frontend dependencies**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+3. **Install backend dependencies**
+   ```bash
+   cd ../backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables**
+   ```bash
+   # Frontend (.env)
+   REACT_APP_API_URL=http://localhost:8000
+   REACT_APP_SOCKET_URL=http://localhost:8000
+   
+   # Backend (env.example -> .env)
+   cp env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Start the development servers**
+   ```bash
+   # Terminal 1 - Backend
+   cd backend
+   python main.py
+   
+   # Terminal 2 - Frontend
+   cd frontend
+   npm start
+   ```
+
+6. **Open your browser**
+   Navigate to `http://localhost:3000` to access the application.
+
 
 **Happy Drawing!**
